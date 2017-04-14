@@ -6,8 +6,10 @@ from sys import stdin
 
 import better_exceptions
 import fire
+import rospy
 
 import coloredlogs
+import youbot
 
 logging.basicConfig(format='%(name)s @ [%(asctime)s] %(levelname)s:\t%(message)s')
 coloredlogs.install(level='DEBUG')
@@ -103,6 +105,7 @@ def run_state_machine(machine):
   terminal state is reached'''
   log = logging.getLogger('picobot-execute')
   state = '0'
+  youBot = youbot.YouBot()
   while True:
     directions, transition_states, ordered_states = machine[state]
     direction_states = [(direction[0], create.check_direction(direction[1])) for direction in directions]
@@ -131,9 +134,11 @@ def main(states_file):
   state_machine = make_state_machine(states)
 
   log.info('Starting execution')
+  rospy.init_node('picobot', anonymous=True)
   run_state_machine(state_machine)
   log.info('Terminal state reached')
+  rospy.spin()
+
 
 if __name__ == '__main__':
-  fire.Fire(run)
-
+  fire.Fire(main)

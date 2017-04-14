@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''The interpreter for the Picobot language'''
 import logging
 import re
@@ -12,7 +13,7 @@ import coloredlogs
 import youbot
 
 logging.basicConfig(format='%(name)s @ [%(asctime)s] %(levelname)s:\t%(message)s')
-coloredlogs.install(level='DEBUG')
+coloredlogs.install(level='INFO')
 
 
 def collect_state_data():
@@ -30,10 +31,12 @@ def parse(state_data):
   '''Given a set of strings each representing a state, remove comments and
   parse out the relevant parts of each state into a dictionary, grouped by
   state number'''
+  log = logging.getLogger('picobot-parser')
   state_regex = re.compile(
       r'(?P<state_num>[0-9]+)\s+(?P<sensor_state>[xXnNsSwWeE*]{4})\s+->\s+(?P<direction>[nNsSwWeE])\s+(?P<new_state>[0-9]+)'
   )
   comment_regex = re.compile(r'.*#.*$')
+  log.info('Parsing state data')
   state_data = [state_regex.match(state) for state in state_data if not comment_regex.match(state)]
   state_data = [match.groupdict() for match in state_data if match]
 
@@ -41,16 +44,20 @@ def parse(state_data):
     '''Utility function to return the state number from a regex match'''
     return match_dict['state_num']
 
+  log.info('Grouping parsed states')
   return {key: list(group) for key, group in groupby(state_data, get_state_num)}
 
 
 def load_states(state_filename):
   '''Read a state file if one was provided, else prompt for a set of states on
   stdin. Return the parsed state data.'''
+  log = logging.getLogger('picobot-loader')
   if state_filename:
+    log.info(f'Loading states from {state_filename}')
     with open(state_filename, 'r') as state_file:
       state_data = state_file.readlines()
   else:
+    log.info('Reading state data from stdin')
     state_data = collect_state_data()
 
   return parse(state_data)
@@ -60,29 +67,34 @@ def make_state_machine(states):
   '''Given parsed state data, form a state machine mapping states to pairs of
   directions to check and possible sensor states. Each sensor state maps a
   4-tuple to a direction in which to drive and a new state to which to transition.'''
+  log = logging.getLogger('picobot-constructor')
   machine = {}
+  log.info('Building state machine from grouped states')
   for state in states:
     state_edges = states[state]
     direction_sets = [edge['sensor_state'].upper() for edge in state_edges]
     directions = []
     for dir_state in direction_sets:
       if dir_state[0] != '*':
-        directions.append('U')
+        directions.append('N')
       if dir_state[1] != '*':
-        directions.append('R')
+        directions.append('E')
       if dir_state[2] != '*':
-        directions.append('L')
+        directions.append('W')
       if dir_state[3] != '*':
-        directions.append('D')
+        directions.append('S')
     directions = set(directions)
-    directions = [(direction, create.DIRECTION_MAP[direction]) for direction in directions]
     sensor_states = {
         edge['sensor_state'].upper(): (edge['direction'].upper(), edge['new_state'])
         for edge in state_edges
     }
 
+    log.debug(directions)
+    log.debug(sensor_states)
+    log.debug(direction_sets)
     machine[state] = (directions, sensor_states, direction_sets)
 
+  log.info('Assembled state machine')
   return machine
 
 
@@ -105,7 +117,7 @@ def run_state_machine(machine):
   terminal state is reached'''
   log = logging.getLogger('picobot-execute')
   state = '0'
-  youBot = youbot.YouBot()
+  you_bot = youbot.YouBot()
   while True:
     directions, transition_states, ordered_states = machine[state]
     direction_states = [(direction[0], create.check_direction(direction[1])) for direction in directions]
@@ -114,14 +126,14 @@ def run_state_machine(machine):
       sensor_state[DIRECTION_MAP[dir_name]] = dir_name if dir_val else 'X'
 
     sensor_state = ''.join(sensor_state)
-    log.info('Read sensor values: {}'.format(sensor_state))
+    log.info(f'Read sensor values: {sensor_state}')
     direction, new_state = transition_states[transition(sensor_state, ordered_states)]
     if direction == 'X':
       return
 
-    log.info('Driving {}'.format(direction))
-    create.drive(DIRECTION_MAP[direction])
-    log.info('Transitioning to state {}'.format(new_state))
+    log.info(f'Driving {direction}')
+    you_bot.move(direction)
+    log.info(f'Transitioning to state {new_state}')
     state = new_state
 
 

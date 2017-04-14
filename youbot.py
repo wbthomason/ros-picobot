@@ -10,7 +10,7 @@ import coloredlogs
 logging.basicConfig(format='%(name)s @ [%(asctime)s] %(levelname)s:\t%(message)s')
 coloredlogs.install(level='DEBUG')
 
-DIRECTIONS = { 
+DIRECTIONS = {
     'N': (0, 1),
     'S': (0, -1),
     'E': (1, 0),

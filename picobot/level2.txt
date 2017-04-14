@@ -1,0 +1,44 @@
+# 
+# Hashtag lines are optional comments
+#
+
+# state 0 with nothing N: go one step N
+0 *x** -> E 1
+
+0 xE** -> N 0
+
+0 NEx* -> W 2
+
+0 NEWx -> S 3
+
+0 NEWS -> X 0
+
+1 ***x -> S 3
+
+1 *x*S -> E 1
+
+1 xE*S -> N 0
+
+1 NExS -> W 2
+
+1 NEWS -> X 1
+
+2 x*** -> N 0
+
+2 N*x* -> W 2
+
+2 N*Wx -> S 3
+
+2 NxWS -> E 1
+
+2 NEWS -> X 2
+
+3 **x* -> W 2
+
+3 **Wx -> S 3
+
+3 *xWS -> E 1
+
+3 xEWS -> N 0
+
+3 NEWS -> X 3

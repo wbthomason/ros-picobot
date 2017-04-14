@@ -18,12 +18,16 @@ DIRECTIONS = {
 }
 
 SPEED = 0.1
+CELL_TIME = 3.0
 
 
 class YouBot(object):
   '''The youBot object, encapsulating the ROS node '''
   def __init__(self):
     self.vel_pub = rospy.Publisher('cmd_vel', Twist)
+    self.stop_twist = Twist()
+    self.stop_twist.linear.x = 0
+    self.stop_twist.linear.y = 0
     # TODO: Make field for obstacle detection service
 
   def check_obstacles(self):
@@ -42,3 +46,5 @@ class YouBot(object):
     twist.linear.x = x * SPEED
     twist.linear.y = y * SPEED
     self.vel_pub.publish(twist)
+    rospy.sleep(CELL_TIME)
+    self.vel_pub.publish(self.stop_twist)

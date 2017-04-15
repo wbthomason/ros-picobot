@@ -117,24 +117,28 @@ def run_state_machine(machine):
   terminal state is reached'''
   log = logging.getLogger('picobot-execute')
   state = '0'
+  print('Creating youBot')
   you_bot = youbot.YouBot()
-  direction_map = {'N': 0, 'E': 1, 'S': 2, 'W': 3}
+  direction_map = {'N': 0, 'E': 1, 'W': 2, 'S': 3}
+  print('Starting to check states')
   while True:
     directions, transition_states, ordered_states = machine[state]
+    print(f'Directions: {directions}, transitions: {transition_states}')
     direction_states = [(direction, you_bot.check_direction(direction)) for direction in directions]
+    print(f'Dir states: {direction_states}')
     sensor_state = list('****')
     for dir_name, dir_val in direction_states:
       sensor_state[direction_map[dir_name]] = dir_name if dir_val else 'X'
 
     sensor_state = ''.join(sensor_state)
-    log.info(f'Read sensor values: {sensor_state}')
+    print(f'Read sensor values: {sensor_state}')
     direction, new_state = transition_states[transition(sensor_state, ordered_states)]
     if direction == 'X':
       return
 
-    log.info(f'Driving {direction}')
+    print(f'Driving {direction}')
     you_bot.move(direction)
-    log.info(f'Transitioning to state {new_state}')
+    print(f'Transitioning to state {new_state}')
     state = new_state
 
 
@@ -147,9 +151,10 @@ def main(states_file):
   state_machine = make_state_machine(states)
 
   log.info('Starting execution')
-  rospy.init_node('picobot', anonymous=True)
+  rospy.init_node('picobot', anonymous=True, disable_signals=True)
+  print('ROS initialized')
   run_state_machine(state_machine)
-  log.info('Terminal state reached')
+  print('Terminal state reached')
   rospy.spin()
 
 

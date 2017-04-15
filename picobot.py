@@ -118,12 +118,13 @@ def run_state_machine(machine):
   log = logging.getLogger('picobot-execute')
   state = '0'
   you_bot = youbot.YouBot()
+  direction_map = {'N': 0, 'E': 1, 'S': 2, 'W': 3}
   while True:
     directions, transition_states, ordered_states = machine[state]
-    direction_states = [(direction[0], create.check_direction(direction[1])) for direction in directions]
+    direction_states = [(direction, you_bot.check_direction(direction)) for direction in directions]
     sensor_state = list('****')
     for dir_name, dir_val in direction_states:
-      sensor_state[DIRECTION_MAP[dir_name]] = dir_name if dir_val else 'X'
+      sensor_state[direction_map[dir_name]] = dir_name if dir_val else 'X'
 
     sensor_state = ''.join(sensor_state)
     log.info(f'Read sensor values: {sensor_state}')
